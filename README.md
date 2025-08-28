@@ -56,6 +56,7 @@ Follow these steps to set up and run the project on your local machine.
 ├── constants.py # ⚙️ Defines input image path and output Excel file path.
 ├── main.py # 🚀 The core script for image processing, OCR, and data extraction.
 ├── uv.lock # 🔒 Lock file for uv package manager, ensuring reproducible environments.
+├── pyproject.toml # 📦 uv configuration file for dependency management.
 └── README.md # 📖 This file!
 
 ## 📤 Output
