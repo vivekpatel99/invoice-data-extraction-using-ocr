@@ -30,10 +30,11 @@ Follow these steps to set up and run the project on your local machine.
 
    *(Note: Adjust the repository URL if it's different)*
 
-2. **Create and activate a virtual environment** using `uv`:
+2. **Setup the project environment** using `uv`:
 
    ```bash
    uv sync
+
    ```
 
 ## 💡 Usage
