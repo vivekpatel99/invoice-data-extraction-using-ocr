@@ -4,4 +4,17 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "loguru>=0.7.3",
+    "opencv-python>=4.12.0.88",
+    "paddleocr>=3.2.0",
+    "pandas>=2.3.2",
+    "pdf2image>=1.17.0",
+    "pillow>=11.3.0",
+]
+
+[dependency-groups]
+dev = [
+    "kagglehub>=0.3.13",
+    "pre-commit>=4.3.0",
+]
