@@ -55,11 +55,8 @@ Follow these steps to set up and run the project on your local machine.
 
 ├── constants.py # ⚙️ Defines input image path and output Excel file path.
 ├── main.py # 🚀 The core script for image processing, OCR, and data extraction.
-├── .gitignore # 🚫 Specifies intentionally untracked files to ignore.
-├── .pre-commit-config.yaml # 🎣 Configuration for pre-commit hooks to maintain code quality.
 ├── uv.lock # 🔒 Lock file for uv package manager, ensuring reproducible environments.
-├── README.md # 📖 This file!
-└── .venv/ # 🐍 Python virtual environment directory.
+└── README.md # 📖 This file!
 
 ## 📤 Output
 
