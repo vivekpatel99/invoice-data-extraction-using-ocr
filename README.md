@@ -25,10 +25,8 @@ Follow these steps to set up and run the project on your local machine.
 
    ```bash
    git clone https://github.com/vivekpatel99/invoice-data-extraction-using-ocr.git
-   cd invoice-data-extraction-ocr/03_development
+   cd invoice-data-extraction-using-ocr
    ```
-
-   *(Note: Adjust the repository URL if it's different)*
 
 2. **Setup the project environment** using `uv`:
 
@@ -59,6 +57,26 @@ Follow these steps to set up and run the project on your local machine.
 ├── pyproject.toml # 📦 uv configuration file for dependency management.
 └── README.md # 📖 This file!
 
+## ⚙️ Configuration
+
+The default input and output paths are configured in `constants.py`.
+
+- `INVOICE_PATH`: The directory where your invoice images are stored.
+- `OUTPUT_PATH`: The path where the resulting Excel file will be saved.
+
+You can modify these paths to suit your project structure.
+
+## ⚠️ Limitations
+
+The current data extraction logic in `main.py` is heuristic-based and optimized for the provided sample invoice layout. It assumes:
+
+- Client information is in the upper-right quadrant.
+- The client's name is the second line of text detected in that quadrant.
+- The address follows the client's name.
+- The Tax ID is findable via a regular expression (e.g., `Tax ID: ...`).
+
+For invoices with different layouts, the parsing logic in the `parse_ocr_results` function within `main.py` will likely need to be adjusted. Future improvements could involve using more advanced NLP techniques or a more configurable rule-based system to reliably locate the required fields.
+
 ## 📤 Output
 
 Upon successful execution, an Excel file named `final_result.xlsx` will be generated in the `output` directory:
@@ -66,13 +84,13 @@ Upon successful execution, an Excel file named `final_result.xlsx` will be gener
 
 The Excel file will contain the extracted client names, addresses, and tax IDs in a tabular format.
 
-Example `final_result.xlsx` content:
+### Example `final_result.xlsx` content:
 
-| client_name        | client_address               | tax_id    |
-| :----------------- | :--------------------------- | :-------- |
-| Client A Inc.      | 123 Main St, City, Country   | ABC123XYZ |
-| Another Client LLC | 456 Oak Ave, Town, State     | DEF456UVW |
-| Global Corp.       | 789 Pine Ln, Village, Region | GHI789JKL |
+| source_file  | client_name        | client_address               | tax_id    |
+| :----------- | :----------------- | :--------------------------- | :-------- |
+| invoice1.jpg | Client A Inc.      | 123 Main St, City, Country   | ABC123XYZ |
+| invoice2.png | Another Client LLC | 456 Oak Ave, Town, State     | DEF456UVW |
+| invoice3.jpg | Global Corp.       | 789 Pine Ln, Village, Region | GHI789JKL |
 
 # References
 

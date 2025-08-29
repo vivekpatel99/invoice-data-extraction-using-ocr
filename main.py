@@ -1,11 +1,11 @@
-from collections import defaultdict
+import logging
 from pathlib import Path
 
 import cv2
 import numpy as np
 import pandas as pd
-import tqdm
 from paddleocr import PaddleOCR
+from tqdm import tqdm
 
 import constants as const
 
@@ -68,11 +68,70 @@ def crop_upper_right(img) -> np.ndarray:
     return img[y1:y2, x1:x2]
 
 
+def parse_ocr_results(text_lines: list[str]) -> dict[str, str]:
+    """
+    Parses the OCR text lines to extract structured client information.
+
+    This is a heuristic-based parser and might need tuning for different
+    invoice formats. It's more robust than fixed-index parsing.
+
+    Args:
+        text_lines (list[str]): A list of text strings from OCR.
+
+    Returns:
+        dict[str, str]: A dictionary with extracted client information.
+    """
+    client_name = ""
+    client_address = ""
+    tax_id = ""
+
+    if not text_lines:
+        return {}
+
+    if len(text_lines) > 1:
+        client_name = text_lines[1]
+    if len(text_lines) > 2:
+        # Join lines from index 2 up to the second-to-last for address
+        client_address = "".join(text_lines[2:-1])
+    if text_lines and len(text_lines) > 0:
+        # Assuming tax_id is always at the end and starts after "Tax ID: "
+        last_line = text_lines[-1]
+        if "Tax ID:" in last_line:
+            tax_id = last_line.split("Tax ID:")[1].strip()
+        elif len(last_line) > 6:  # Fallback if "Tax ID:" isn't explicit
+            tax_id = last_line[6:]  # Original logic
+
+    return {
+        "client_name": client_name,
+        "client_address": client_address,
+        "tax_id": tax_id,
+    }
+
+
+def process_image(image_path: Path, ocr: PaddleOCR) -> dict[str, str]:
+    """Reads, crops, and extracts data from a single image."""
+    img = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+    if img is None:
+        logging.warning("Could not read image %s. Skipping.", image_path)
+        return {}
+
+    cropped_img = crop_upper_right(img)
+    result = ocr.predict(cropped_img)
+
+    if result and result[0] and "rec_texts" in result[0]:
+        text_lines = result[0]["rec_texts"]
+        return parse_ocr_results(text_lines)
+
+    logging.warning("No text detected or unexpected OCR result for %s.", image_path)
+    return {}
+
+
 def main() -> None:
     """
     Main function to process invoice images, extract data using OCR,
     and save the results to an Excel file.
     """
+
     # Initialize PaddleOCR and load English model
     ocr = PaddleOCR(
         text_recognition_model_name="PP-OCRv4_server_rec",
@@ -81,55 +140,42 @@ def main() -> None:
         use_textline_orientation=False,  # text detection + text recognition
         lang="en",
     )
-    data_dict = defaultdict(list)
-    for image_path in tqdm.tqdm(read_images(const.INVOICE_PATH)):
-        client_name = ""
-        client_address = ""
-        tax_id = ""
 
+    image_paths = list(read_images(const.INVOICE_PATH))
+    if not image_paths:
+        logging.warning("No images found in %s. Exiting.", const.INVOICE_PATH)
+        return
+
+    extracted_data = []
+    for image_path in tqdm(image_paths, desc="Processing Invoices"):
         try:
-            # Read image
-            img = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
-            if img is None:
-                print(f"Warning: Could not read image {image_path}. Skipping.")
-                continue
+            data = process_image(image_path, ocr)
+            if data:
+                data["source_file"] = image_path.name
+                extracted_data.append(data)
+        except Exception:
+            logging.exception("Error processing %s. Skipping.", image_path)
 
-            # Crop image
-            cropped_img = crop_upper_right(img)
+    if not extracted_data:
+        logging.warning(
+            "Could not extract data from any image. No output file will be created."
+        )
+        return
 
-            # Perform OCR
-            result = ocr.predict(cropped_img)
-            # PaddleOCR result format: list of dicts, each dict for a detected block
-            # For simplicity, assuming the first block contains all relevant text lines
-            if result and result[0] and "rec_texts" in result[0]:
-                required_info = result[0]["rec_texts"]
+    # Save text to the excel file
+    dataframe = pd.DataFrame(extracted_data)
 
-                if len(required_info) > 1:
-                    client_name = required_info[1]
-                if len(required_info) > 2:
-                    # Join lines from index 2 up to the second-to-last for address
-                    client_address = "".join(required_info[2:-1])
-                if required_info and len(required_info) > 0:
-                    # Assuming tax_id is always at the end and starts after "Tax ID: "
-                    last_line = required_info[-1]
-                    if "Tax ID:" in last_line:
-                        tax_id = last_line.split("Tax ID:")[1].strip()
-                    elif len(last_line) > 6:  # Fallback if "Tax ID:" isn't explicit
-                        tax_id = last_line[6:]  # Original logic
-            else:
-                print(
-                    f"Warning: No text detected or unexpected OCR result for {image_path}. Skipping."
-                )
-        except Exception as e:
-            print(f"Error processing {image_path}: {e}. Skipping.")
+    # Reorder columns for clarity
+    cols = ["source_file", "client_name", "client_address", "tax_id"]
+    # Filter for existing columns to avoid errors if a field is never found
+    existing_cols = [col for col in cols if col in dataframe.columns]
+    dataframe = dataframe[existing_cols]
 
-        data_dict["client_name"].append(client_name)
-        data_dict["client_address"].append(client_address)
-        data_dict["tax_id"].append(tax_id)
-
-    # save text to the excel file
-    dataframe = pd.DataFrame(data_dict)
+    # Ensure output directory exists
+    const.OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     dataframe.to_excel(const.OUTPUT_PATH, index=False)
+    logging.info("\nSuccessfully processed %d images.", len(extracted_data))
+    logging.info("Results saved to %s", const.OUTPUT_PATH)
 
 
 if __name__ == "__main__":
