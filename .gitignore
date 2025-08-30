@@ -205,5 +205,5 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 datasets/
-*.jpg
+datasets/*.jpg
 *.json
