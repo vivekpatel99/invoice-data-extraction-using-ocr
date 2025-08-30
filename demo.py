@@ -6,20 +6,6 @@ from paddleocr import PaddleOCR
 
 from utils import crop_upper_right
 
-# def crop_upper_right(img):
-#     """
-#     Your crop function - modify to return offset coordinates
-#     """
-#     h, w = img.shape[:2]
-#     # Example: cropping upper right quarter
-#     crop_x = w // 2
-#     crop_y = 0
-#     crop_w = w // 2
-#     crop_h = h // 2
-
-#     cropped = img[crop_y : crop_y + crop_h, crop_x : crop_x + crop_w]
-#     return cropped, (crop_x, crop_y)
-
 
 def draw_bboxes_on_original_from_json(original_img, json_result, offset_x, offset_y):
     """
