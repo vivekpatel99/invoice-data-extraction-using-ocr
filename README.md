@@ -1,5 +1,7 @@
 # 🧾 Invoice Data Extraction Using OCR
 
+![demo](output/original_with_bboxes_demo.jpg)
+
 This project automates the extraction of key client information (such as name, address, and tax ID) from invoice images using Optical Character Recognition (OCR). It's designed to efficiently process a batch of invoice images, intelligently crop relevant sections, extract the structured data, and then compile it into a clean Excel spreadsheet for easy analysis.
 
 ## ✨ Features
